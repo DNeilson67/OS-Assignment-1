@@ -43,36 +43,40 @@ void *producer(void *arg) {
 
 
 void *customer(void *arg) {
+
     int parity = *((int *)arg);
     char filename[20];
-    
+    // Determining the odd/even.txt
     sprintf(filename, "%s.txt", (parity == 0) ? "even" : "odd");
 
+    FILE *file = fopen(filename, "a");
     while (true) {
         //Lock and Unlock the buffer_index so that the second customer thread can access.
         pthread_mutex_lock(&lock);
         if (buffer_index == 0 && producer_finished) {
             pthread_mutex_unlock(&lock);
+	    //Close the file if the loops ended, to prevent memory leaks.
+            fclose(file);
             break;
         }
+
         if (buffer_index > 0) {
+	    // Parity determines the odd/even
             int number = buffer[buffer_index-1];
             if (number % 2 == parity) {
-                FILE *file = fopen(filename, "a");
                 if (file != NULL) {
                     fprintf(file, "%d\n", number);
-                    fclose(file);
                 }
                 buffer_index--;
             }
         }
         pthread_mutex_unlock(&lock);
     }
-    // Debugging Purposes: To check if the customer thread has finished.
+    // Debug Purpose: To check which customer thread is finished.
     //printf("Customer %s thread has finished.\n", (parity == 0) ? "even" : "odd");
     return NULL;
-}
 
+}
 int main() {
     pthread_t prod_tid, cust1_tid, cust2_tid;
     int cust1_parity = 0; // This represents even, since everything % 2 == 0
