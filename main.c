@@ -16,29 +16,31 @@ pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 bool producer_finished = false;
 
 void *producer(void *arg) {
-    //lock the buffer_index so there is no other changes from other function
-    pthread_mutex_lock(&lock);
-    for (int i = 0; i < MAX_COUNT; ++i) {
+    FILE *file = fopen("all.txt", "w");
+    int i = 0;
+    for (i; i < MAX_COUNT; i++) {
+    	// This allows the number to generate number from a range of 1-10000.
         int number = rand() % (UPPER_NUM - LOWER_NUM + 1) + LOWER_NUM;
-        if (buffer_index < BUFFER_SIZE) {
-            buffer[buffer_index++] = number;
-            FILE *all_file = fopen("all.txt", "a");
-            if (all_file != NULL) {
-                fprintf(all_file, "%d\n", number);
-                fclose(all_file);
-            }
+        while(buffer_index >= BUFFER_SIZE){
+       	//Do nothing if buffer_index >= buffer_size since the buffer can only stores a max of 100.
         }
-        else { 
-    // Debugging purposes: To check the index of buffer, and the i of the loop, to ensure there is no leak on all.txt, such as printing more than the BUFFER_SIZE
-	//printf("buffer index: %d\n i: %d\n", buffer_index, i);
-	break;}
+	// Lock the shared data which is buffered_index and also file
+        pthread_mutex_lock(&lock);
+        buffer[buffer_index++] = number;
+        if (file != NULL) {
+            fprintf(file, "%d\n", number);  
+        }
+        // Unlock if done modifying.
+        pthread_mutex_unlock(&lock);
     }
-    pthread_mutex_unlock(&lock); 
+
+    fclose(file);
+    //Debug purposes: Checking the memory leaks
+    //printf("%d", i);
+    // The customer can be ended if the producer is done.
     producer_finished = true;
-    // Debugging Purposes: To check if the producer thread is finished or not.
-    //printf("Producer Thread has finished.\n");
-    return NULL;
 }
+
 
 void *customer(void *arg) {
     int parity = *((int *)arg);
