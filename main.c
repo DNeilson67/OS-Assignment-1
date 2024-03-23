@@ -29,18 +29,21 @@ void *producer(void *arg) {
             }
         }
         else { 
-	printf("buffer index: %d\n i: %d", buffer_index, i);break;}
+    // Debugging purposes: To check the index of buffer, and the i of the loop, to ensure there is no leak on all.txt, such as printing more than the BUFFER_SIZE
+	//printf("buffer index: %d\n i: %d\n", buffer_index, i);
+	break;}
     }
     pthread_mutex_unlock(&lock); 
     producer_finished = true;
+    // Debugging Purposes: To check if the producer thread is finished or not.
+    //printf("Producer Thread has finished.\n");
     return NULL;
 }
 
 void *customer(void *arg) {
     int parity = *((int *)arg);
     char filename[20];
-
-    //Print file odd/even depends on the parity
+    
     sprintf(filename, "%s.txt", (parity == 0) ? "even" : "odd");
 
     while (true) {
@@ -63,12 +66,15 @@ void *customer(void *arg) {
         }
         pthread_mutex_unlock(&lock);
     }
+    // Debugging Purposes: To check if the customer thread has finished.
+    //printf("Customer %s thread has finished.\n", (parity == 0) ? "even" : "odd");
     return NULL;
 }
+
 int main() {
     pthread_t prod_tid, cust1_tid, cust2_tid;
-    int cust1_parity = 0; // This represents even, since number % 2 == 0
-    int cust2_parity = 1; // This represents odd, since number % 2 == 1
+    int cust1_parity = 0; // This represents even, since everything % 2 == 0
+    int cust2_parity = 1; // This represents odd, since everything % 2 == 1
     
     // Create the thread (1 Producer & 2 Consumer)
     pthread_create(&prod_tid, NULL, producer, NULL);
@@ -79,7 +85,7 @@ int main() {
     pthread_join(cust1_tid, NULL);
     pthread_join(cust2_tid, NULL);
 
-    printf("Every thread has finished.\n");
-
+    // Debugging Purposes: to check every thread is finished.
+    //printf("All threads have finished.\n"); 
     return 0;
 }
